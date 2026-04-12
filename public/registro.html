@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solicitar Acceso — MaJo Trends</title>
+  <link rel="stylesheet" href="/auth.css" />
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">MJ</div>
+      MaJo Trends
+    </div>
+
+    <h1 class="auth-title">Solicitar acceso</h1>
+    <p class="auth-subtitle">Inteligencia de moda exclusiva para profesionales del sector. Tu solicitud será revisada por el equipo MaJo.</p>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="reg-form" autocomplete="on" id="reg-form">
+      <div class="form-group">
+        <label class="form-label" for="nombre">Nombre completo</label>
+        <input class="form-input" type="text" id="nombre" name="nombre" placeholder="María Fernanda López" autocomplete="name" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-input" type="email" id="email" name="email" placeholder="tu@email.com" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Contraseña</label>
+        <input class="form-input" type="password" id="password" name="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mensaje">¿Por qué quieres acceder? <span style="color:var(--text-dim)">(opcional)</span></label>
+        <textarea class="form-input" id="mensaje" name="mensaje" placeholder="Cuéntanos sobre tu marca o proyecto de moda…"></textarea>
+      </div>
+      <button class="btn-primary" type="submit" id="submit-btn">Enviar solicitud</button>
+    </form>
+
+    <div class="auth-footer">
+      ¿Ya tienes cuenta? <a href="/login">Iniciar sesión</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const form  = document.getElementById('reg-form');
+  const btn   = document.getElementById('submit-btn');
+  const alert = document.getElementById('alert');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearAlert();
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    const body = {
+      nombre:   document.getElementById('nombre').value.trim(),
+      email:    document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value,
+      mensaje:  document.getElementById('mensaje').value.trim(),
+    };
+
+    try {
+      const res = await fetch('/auth/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) { showAlert(data.error, 'error'); return; }
+      showAlert('¡Solicitud enviada! El equipo MaJo revisará tu acceso pronto.', 'success');
+      form.reset();
+      setTimeout(() => location.href = '/pendiente', 2000);
+    } catch {
+      showAlert('Error de conexión. Intenta de nuevo.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Enviar solicitud';
+    }
+  });
+
+  function showAlert(msg, type) {
+    alert.textContent = msg;
+    alert.className = `alert alert-${type} show`;
+  }
+  function clearAlert() {
+    alert.className = 'alert';
+  }
+</script>
+</body>
+</html>

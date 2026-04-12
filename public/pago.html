@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suscripción — MaJo Trends</title>
+  <link rel="stylesheet" href="/auth.css" />
+</head>
+<body>
+<div class="info-page">
+  <div class="info-card">
+    <div class="auth-logo" style="justify-content:center;margin-bottom:32px">
+      <div class="auth-logo-mark">MJ</div>
+      MaJo Trends
+    </div>
+
+    <div class="info-icon">✦</div>
+
+    <h1 id="page-title" class="info-title">Acceso completo</h1>
+    <p id="page-subtitle" class="info-text">Activa tu suscripción para seguir accediendo a inteligencia de moda de primera línea.</p>
+
+    <div class="price-badge">
+      <span class="price-currency">$</span>
+      <span class="price-amount">4.99</span>
+      <span class="price-period">/ mes</span>
+    </div>
+
+    <ul class="feature-list">
+      <li>Dashboard de tendencias en tiempo real</li>
+      <li>Cronología 2023–2025 · SS &amp; FW</li>
+      <li>Proyecciones 2026–2027 por escenario</li>
+      <li>Consultas ilimitadas con Majo IA</li>
+      <li>Cancela cuando quieras</li>
+    </ul>
+
+    <div id="alert" class="alert"></div>
+
+    <button class="btn-primary" id="checkout-btn" style="font-size:15px;padding:14px 20px">
+      Suscribirse por $4.99/mes →
+    </button>
+
+    <p style="margin-top:16px;font-size:12px;color:var(--text-dim)">
+      Pago seguro con Stripe · Tarjeta de crédito o débito
+    </p>
+
+    <hr class="divider" />
+    <p style="font-size:13px;color:var(--text-dim)">
+      ¿Tienes preguntas? Escríbenos a
+      <a href="mailto:soporte@majotrends.co">soporte@majotrends.co</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.get('expirado') === '1') {
+    document.getElementById('page-title').textContent = 'Tu trial ha vencido';
+    document.getElementById('page-subtitle').textContent =
+      'Esperamos que hayas disfrutado tu prueba gratuita de 30 días. Activa tu suscripción para continuar.';
+  }
+
+  document.getElementById('checkout-btn').addEventListener('click', async () => {
+    const btn   = document.getElementById('checkout-btn');
+    const alert = document.getElementById('alert');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Redirigiendo a Stripe…';
+    alert.className = 'alert';
+
+    try {
+      const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert.textContent = data.error || 'Error al iniciar el pago.';
+        alert.className = 'alert alert-error show';
+        return;
+      }
+      location.href = data.url;
+    } catch {
+      alert.textContent = 'Error de conexión. Intenta de nuevo.';
+      alert.className = 'alert alert-error show';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Suscribirse por $4.99/mes →';
+    }
+  });
+</script>
+</body>
+</html>

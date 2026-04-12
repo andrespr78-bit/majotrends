@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — MaJo Trends</title>
+  <link rel="stylesheet" href="/auth.css" />
+</head>
+<body>
+
+<!-- ===== LOGIN VIEW ===== -->
+<div id="login-view" class="admin-login-page">
+  <div class="auth-card" style="max-width:380px">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">MJ</div>
+      Admin Panel
+    </div>
+    <h1 class="auth-title" style="font-size:26px">Acceso administrador</h1>
+    <p class="auth-subtitle">Solo para el equipo MaJo.</p>
+
+    <div id="login-alert" class="alert"></div>
+
+    <form id="admin-login-form">
+      <div class="form-group">
+        <label class="form-label" for="admin-pass">Contraseña</label>
+        <input class="form-input" type="password" id="admin-pass" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button class="btn-primary" type="submit" id="admin-login-btn">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD VIEW ===== -->
+<div id="dashboard-view" class="admin-page" style="display:none">
+
+  <header class="admin-header">
+    <div class="admin-brand">
+      <div class="auth-logo-mark" style="width:26px;height:26px;font-size:10px">MJ</div>
+      MaJo Trends
+      <span class="admin-badge">Admin</span>
+    </div>
+    <div class="admin-header-actions">
+      <span id="header-counts" style="font-size:12px;color:var(--text-dim)"></span>
+      <button class="admin-logout-btn" id="logout-btn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- PENDIENTES -->
+    <section class="admin-section">
+      <div class="section-header">
+        <h2 class="section-title">Solicitudes pendientes</h2>
+        <span class="section-count" id="count-pending">0</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Mensaje</th>
+              <th>Fecha solicitud</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="pending-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- USUARIOS ACTIVOS -->
+    <section class="admin-section">
+      <div class="section-header">
+        <h2 class="section-title">Usuarios activos</h2>
+        <span class="section-count" id="count-active">0</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Estado</th>
+              <th>Vencimiento trial</th>
+              <th>Stripe</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="active-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2A2A2A;border:1px solid var(--border2);color:var(--text);padding:10px 22px;border-radius:20px;font-size:13px;z-index:300;display:none;transition:opacity .3s"></div>
+
+<script>
+// ===== AUTH CHECK =====
+async function checkAuth() {
+  const res = await fetch('/admin/api/status');
+  const { isAdmin } = await res.json();
+  if (isAdmin) showDashboard();
+  else showLogin();
+}
+
+function showLogin()     { document.getElementById('login-view').style.display = 'flex'; document.getElementById('dashboard-view').style.display = 'none'; }
+function showDashboard() { document.getElementById('login-view').style.display = 'none'; document.getElementById('dashboard-view').style.display = 'block'; loadAll(); }
+
+// ===== LOGIN =====
+document.getElementById('admin-login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn   = document.getElementById('admin-login-btn');
+  const alert = document.getElementById('login-alert');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  alert.className = 'alert';
+
+  try {
+    const res = await fetch('/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: document.getElementById('admin-pass').value }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert.textContent = data.error;
+      alert.className = 'alert alert-error show';
+    } else {
+      showDashboard();
+    }
+  } catch {
+    alert.textContent = 'Error de conexión.';
+    alert.className = 'alert alert-error show';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+});
+
+// ===== LOGOUT =====
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await fetch('/admin/logout', { method: 'POST' });
+  showLogin();
+  document.getElementById('admin-pass').value = '';
+});
+
+// ===== DATA =====
+async function loadAll() {
+  const [pendientes, activos] = await Promise.all([
+    fetch('/admin/api/pendientes').then(r => r.json()),
+    fetch('/admin/api/usuarios').then(r => r.json()),
+  ]);
+  renderPending(pendientes);
+  renderActive(activos);
+  document.getElementById('header-counts').textContent =
+    `${pendientes.length} pendiente${pendientes.length !== 1 ? 's' : ''} · ${activos.length} activo${activos.length !== 1 ? 's' : ''}`;
+}
+
+// ===== PENDING TABLE =====
+function renderPending(data) {
+  const tbody = document.getElementById('pending-body');
+  document.getElementById('count-pending').textContent = data.length;
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No hay solicitudes pendientes</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(u => `
+    <tr id="row-p-${u.id}">
+      <td class="td-name">${esc(u.nombre)}</td>
+      <td><span class="td-email">${esc(u.email)}</span></td>
+      <td><span class="td-msg" title="${esc(u.mensaje_solicitud || '')}">${esc(u.mensaje_solicitud || '—')}</span></td>
+      <td style="font-size:12px;color:var(--text-dim)">${fmtDate(u.fecha_solicitud)}</td>
+      <td>
+        <div class="table-actions">
+          <button class="act-btn act-btn-approve" onclick="aprobar(${u.id})">Aprobar</button>
+          <button class="act-btn act-btn-reject"  onclick="rechazar(${u.id})">Rechazar</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== ACTIVE TABLE =====
+function renderActive(data) {
+  const tbody = document.getElementById('active-body');
+  document.getElementById('count-active').textContent = data.length;
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No hay usuarios activos</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(u => `
+    <tr id="row-a-${u.id}">
+      <td class="td-name">${esc(u.nombre)}</td>
+      <td><span class="td-email">${esc(u.email)}</span></td>
+      <td><span class="status-pill status-${u.estado}">${u.estado}</span></td>
+      <td style="font-size:12px;color:var(--text-dim)">${u.fecha_vencimiento_trial ? fmtDate(u.fecha_vencimiento_trial) : '—'}</td>
+      <td style="font-size:12px;color:var(--text-dim)">${u.stripe_subscription_id ? '✓ activo' : '—'}</td>
+      <td>
+        <div class="table-actions">
+          <button class="act-btn act-btn-revoke" onclick="revocar(${u.id})">Revocar</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ===== ACTIONS =====
+async function aprobar(id) {
+  if (!confirm('¿Aprobar este usuario? Se le enviará un email de bienvenida con 30 días de trial.')) return;
+  const res = await fetch(`/admin/api/aprobar/${id}`, { method: 'POST' });
+  if (res.ok) { showToast('Usuario aprobado ✓'); loadAll(); }
+  else { const d = await res.json(); showToast('Error: ' + d.error); }
+}
+
+async function rechazar(id) {
+  if (!confirm('¿Rechazar esta solicitud?')) return;
+  const res = await fetch(`/admin/api/rechazar/${id}`, { method: 'POST' });
+  if (res.ok) { showToast('Solicitud rechazada'); loadAll(); }
+  else showToast('Error al rechazar.');
+}
+
+async function revocar(id) {
+  if (!confirm('¿Revocar el acceso de este usuario? No podrá ingresar.')) return;
+  const res = await fetch(`/admin/api/revocar/${id}`, { method: 'POST' });
+  if (res.ok) { showToast('Acceso revocado'); loadAll(); }
+  else showToast('Error al revocar.');
+}
+
+// ===== UTIL =====
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return iso; }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => {
+    t.style.opacity = '0';
+    setTimeout(() => { t.style.display = 'none'; }, 300);
+  }, 2500);
+}
+
+// ===== INIT =====
+checkAuth();
+</script>
+</body>
+</html>

@@ -17,12 +17,43 @@ let allTendencias = [];
 let allCrono      = [];
 let allProy       = [];
 
+// Global fetch wrapper — redirect to /login on 401/402
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) { location.href = '/login'; throw new Error('Unauthorized'); }
+  if (res.status === 402) {
+    const d = await res.json().catch(() => ({}));
+    location.href = d.redirect || '/pago';
+    throw new Error('Payment required');
+  }
+  return res;
+}
+
+async function loadMe() {
+  try {
+    const res  = await apiFetch('/api/me');
+    const user = await res.json();
+    document.getElementById('user-name').textContent = user.nombre.split(' ')[0];
+    const badge = document.getElementById('user-badge');
+    if (user.estado === 'trial' && user.dias_restantes != null) {
+      badge.textContent = `Trial · ${user.dias_restantes}d`;
+      badge.className = 'user-badge trial';
+    } else if (user.estado === 'activo') {
+      badge.textContent = 'Pro';
+      badge.className = 'user-badge activo';
+    }
+  } catch {}
+}
+
 async function loadAll() {
-  [allTendencias, allCrono, allProy] = await Promise.all([
-    fetch('/api/tendencias').then(r => r.json()),
-    fetch('/api/cronologia').then(r => r.json()),
-    fetch('/api/proyecciones').then(r => r.json()),
+  const [t, c, p] = await Promise.all([
+    apiFetch('/api/tendencias').then(r => r.json()),
+    apiFetch('/api/cronologia').then(r => r.json()),
+    apiFetch('/api/proyecciones').then(r => r.json()),
   ]);
+  allTendencias = t;
+  allCrono      = c;
+  allProy       = p;
   renderDashboard('all');
   updateHero();
 }
@@ -244,7 +275,7 @@ async function sendIA() {
   iaMessages.scrollTop = iaMessages.scrollHeight;
 
   try {
-    const res = await fetch('/api/consulta', {
+    const res = await apiFetch('/api/consulta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pregunta }),
@@ -306,5 +337,14 @@ function showToast(msg) {
   t._t = setTimeout(() => { t.classList.add('fade'); setTimeout(() => t.hidden=true, 300); }, 2500);
 }
 
+// ===== LOGOUT =====
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await fetch('/auth/logout', { method: 'POST' });
+  location.href = '/login';
+});
+
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded', loadAll);
+document.addEventListener('DOMContentLoaded', () => {
+  loadMe();
+  loadAll();
+});
