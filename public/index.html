@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MaJo Trends — Inteligencia de Moda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-logo">MJ</div>
+      <div class="brand-text">
+        <span class="brand-name">MaJo Trends</span>
+        <span class="brand-tagline">Inteligencia de Moda</span>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <button class="nav-btn active" data-view="dashboard">Tendencias</button>
+      <button class="nav-btn" data-view="cronologia">Cronología</button>
+      <button class="nav-btn" data-view="proyecciones">Proyecciones</button>
+      <button class="nav-btn nav-btn--ia" data-view="ia">✦ Majo IA</button>
+    </nav>
+  </header>
+
+  <!-- ========== DASHBOARD ========== -->
+  <main id="view-dashboard" class="view active">
+    <div class="hero">
+      <div class="hero-text">
+        <p class="hero-season" id="hero-season">Temporada Actual</p>
+        <h1 class="hero-title">Tendencias <em>que mueven</em><br>el mercado ahora</h1>
+        <p class="hero-sub">Análisis en tiempo real para ropa exterior femenina · Colombia &amp; EE.UU.</p>
+      </div>
+      <div class="hero-stats" id="hero-stats"></div>
+    </div>
+
+    <div class="category-tabs">
+      <button class="cat-tab active" data-cat="all">Todas</button>
+      <button class="cat-tab" data-cat="colores">Colores</button>
+      <button class="cat-tab" data-cat="siluetas">Siluetas</button>
+      <button class="cat-tab" data-cat="telas">Telas</button>
+      <button class="cat-tab" data-cat="estampados">Estampados</button>
+      <button class="cat-tab" data-cat="estilos">Estilos</button>
+    </div>
+
+    <div id="trends-grid" class="trends-grid"></div>
+  </main>
+
+  <!-- ========== CRONOLOGÍA ========== -->
+  <main id="view-cronologia" class="view">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">Cronología de Tendencias</h2>
+        <p class="page-sub">2023 – 2025 · Qué llegó, qué explotó, qué muere</p>
+      </div>
+      <div class="crono-controls">
+        <button class="year-btn active" data-year="all">Todos</button>
+        <button class="year-btn" data-year="2023">2023</button>
+        <button class="year-btn" data-year="2024">2024</button>
+        <button class="year-btn" data-year="2025">2025</button>
+      </div>
+    </div>
+    <div id="crono-container" class="crono-container"></div>
+  </main>
+
+  <!-- ========== PROYECCIONES ========== -->
+  <main id="view-proyecciones" class="view">
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">Proyección de Escenarios</h2>
+        <p class="page-sub">2026 – 2027 · Basado en ciclos históricos de moda</p>
+      </div>
+      <div class="proy-controls">
+        <select id="proy-anio" class="select-pill">
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+    </div>
+    <div id="proy-grid" class="proy-grid"></div>
+  </main>
+
+  <!-- ========== MAJO IA ========== -->
+  <main id="view-ia" class="view">
+    <div class="ia-wrapper">
+      <div class="ia-header">
+        <div class="ia-avatar">✦</div>
+        <div>
+          <h2 class="ia-title">Majo IA</h2>
+          <p class="ia-subtitle">Tu asesora de tendencias personal · Especialista en moda exterior femenina</p>
+        </div>
+      </div>
+
+      <div class="ia-examples-row">
+        <button class="pill-btn" data-q="¿Qué colores deberían dominar la colección FW2026 de MaJo para el mercado colombiano?">Colores FW2026 Colombia</button>
+        <button class="pill-btn" data-q="¿Qué siluetas son más vendibles en Miami para una cliente latina 35-50 años?">Siluetas Miami latina</button>
+        <button class="pill-btn" data-q="El quiet luxury está muriendo o solo evolucionando? Dame tu análisis editorial.">¿Quiet luxury: muerto o evolución?</button>
+        <button class="pill-btn" data-q="¿Cuáles telas deberían priorizar para una colección de precio medio-alto en Colombia?">Telas colección premium CO</button>
+        <button class="pill-btn" data-q="Dame un análisis de qué tendencias de pasarela 2025 pueden llegar al mercado colombiano masivo en 2026.">Pasarela 2025 → Mercado CO 2026</button>
+      </div>
+
+      <div class="ia-chat-area">
+        <div id="ia-messages" class="ia-messages">
+          <div class="ia-welcome">
+            <span class="welcome-icon">✦</span>
+            <p>Hola, soy <strong>Majo IA</strong>. Pregúntame sobre tendencias, colores de temporada, qué siluetas vender, cómo proyectar tu colección o cualquier análisis de moda que necesites.</p>
+          </div>
+        </div>
+
+        <div class="ia-input-bar">
+          <textarea
+            id="ia-input"
+            class="ia-input"
+            placeholder="Pregunta sobre tendencias, colores, telas, siluetas, proyecciones…"
+            rows="1"
+          ></textarea>
+          <button id="ia-send" class="ia-send-btn" aria-label="Enviar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
