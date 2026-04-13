@@ -1,4 +1,5 @@
 const { DatabaseSync } = require('node:sqlite');
+const bcrypt = require('bcryptjs');
 const db = new DatabaseSync('majotrends.db');
 
 db.exec(`
@@ -144,6 +145,17 @@ if (n.c === 0) {
     [2027,'tendencia_fuerte','telas','Biomateriales: Micelio y Algas','Las telas del futuro llegan al mainstream.'],
     [2027,'tendencia_fuerte','estampados','Generativo por IA','Estampados creados por algoritmos, únicos por prenda.'],
   ].forEach(d => iP.run(...d));
+}
+
+// ===== SEED OWNER =====
+const ownerExists = db.prepare(`SELECT id FROM usuarios WHERE email = 'majo@majocolombia.com'`).get();
+if (!ownerExists) {
+  const hash = bcrypt.hashSync('majo2026!', 12);
+  db.prepare(`
+    INSERT INTO usuarios (nombre, email, password_hash, estado, fecha_solicitud, fecha_aprobacion)
+    VALUES (?, ?, ?, 'activo', ?, ?)
+  `).run('María José Obando', 'majo@majocolombia.com', hash,
+    new Date().toISOString(), new Date().toISOString());
 }
 
 // ===== TENDENCIAS QUERIES =====

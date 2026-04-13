@@ -155,7 +155,7 @@ app.post('/admin/api/aprobar/:id', requireAdmin, async (req, res) => {
   const user = db.getUserById.get(req.params.id);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
   const expiry = new Date();
-  expiry.setDate(expiry.getDate() + 30);
+  expiry.setDate(expiry.getDate() + 7);
   db.updateUserApproved.run('trial', new Date().toISOString(), expiry.toISOString(), user.id);
   const updated = db.getUserById.get(user.id);
   try { await emailSvc.sendWelcome(updated); } catch (e) { console.error('Email:', e.message); }
