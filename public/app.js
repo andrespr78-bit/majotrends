@@ -1,3 +1,4 @@
+// MaJo Trends v2.1 - con referencias Pinterest
 // ===== NAVEGACIÓN =====
 const views = { dashboard: null, cronologia: null, proyecciones: null, ia: null };
 Object.keys(views).forEach(k => { views[k] = document.getElementById(`view-${k}`); });
