@@ -3,7 +3,7 @@ const { Resend } = require('resend');
 
 const FROM  = 'noreply@majocolombia.com';
 const ADMIN = 'hola@majocolombia.com';
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
+const BASE_URL = process.env.BASE_URL || 'https://majotrends-production.up.railway.app';
 
 let resend = null;
 
