@@ -111,6 +111,8 @@ app.post('/auth/registro', async (req, res) => {
 
   const hash = await bcrypt.hash(password, 12);
   db.createUser.run(nombre.trim(), email.toLowerCase().trim(), hash, mensaje?.trim() || null, new Date().toISOString());
+  const newUser = db.getUserByEmail.get(email.toLowerCase().trim());
+  try { await emailSvc.sendNewRequest(newUser); } catch (e) { console.error('Email nueva solicitud ERROR:', e.message, e.stack); }
   res.json({ ok: true });
 });
 

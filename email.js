@@ -22,8 +22,12 @@ async function send({ to, subject, html }) {
     console.log(`\n📧 [EMAIL SIMULADO]\n  Para: ${to}\n  Asunto: ${subject}\n`);
     return;
   }
-  const { error } = await client.emails.send({ from: FROM, to, subject, html });
-  if (error) throw new Error(error.message);
+  const { data, error } = await client.emails.send({ from: FROM, to, subject, html });
+  if (error) {
+    console.error('[EMAIL] Resend error:', JSON.stringify(error));
+    throw new Error(error.message);
+  }
+  console.log('[EMAIL] Sent OK, id:', data?.id);
 }
 
 // ===== BASE TEMPLATE =====
