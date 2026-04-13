@@ -95,7 +95,7 @@ app.get('/login',     (req, res) => req.session.userId ? res.redirect('/') : res
 app.get('/registro',  (req, res) => req.session.userId ? res.redirect('/') : res.sendFile(path.join(__dirname, 'public/registro.html')));
 app.get('/pendiente', (req, res) => res.sendFile(path.join(__dirname, 'public/pendiente.html')));
 app.get('/pago',      (req, res) => res.sendFile(path.join(__dirname, 'public/pago.html')));
-app.get('/pago/exitoso', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public/pago-exitoso.html')));
+app.get('/pago/exitoso', (req, res) => res.sendFile(path.join(__dirname, 'public/pago-exitoso.html')));
 app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
 
 // ===== AUTH ROUTES =====
@@ -223,13 +223,18 @@ app.post('/api/consulta', requireAuth, async (req, res) => {
 });
 
 // ===== STRIPE CHECKOUT =====
-app.post('/api/stripe/checkout', requireAuth, async (req, res) => {
+app.post('/api/stripe/checkout', async (req, res) => {
+  // Allow any logged-in user regardless of estado (expirado users need to pay)
+  if (!req.session.userId) return res.status(401).json({ error: 'Inicia sesión para suscribirte.' });
+  const user = db.getUserById.get(req.session.userId);
+  if (!user) return res.status(401).json({ error: 'No autorizado.' });
   if (!stripe) return res.status(503).json({ error: 'Stripe no configurado. Agrega STRIPE_SECRET_KEY.' });
   try {
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const s = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      customer_email: req.user.email,
+      customer_email: user.email,
       line_items: [{
         price_data: {
           currency: 'usd',
@@ -239,9 +244,9 @@ app.post('/api/stripe/checkout', requireAuth, async (req, res) => {
         },
         quantity: 1,
       }],
-      success_url: `${req.protocol}://${req.get('host')}/pago/exitoso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${req.protocol}://${req.get('host')}/pago`,
-      metadata: { userId: String(req.user.id) },
+      success_url: `${baseUrl}/pago/exitoso?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `${baseUrl}/pago`,
+      metadata: { userId: String(user.id) },
     });
     res.json({ url: s.url });
   } catch (e) { res.status(500).json({ error: e.message }); }
