@@ -158,6 +158,16 @@ if (!ownerExists) {
     new Date().toISOString(), new Date().toISOString());
 }
 
+const andresExists = db.prepare(`SELECT id FROM usuarios WHERE email = 'andres@majocolombia.com'`).get();
+if (!andresExists) {
+  const hash = bcrypt.hashSync('Majo2026!', 12);
+  db.prepare(`
+    INSERT INTO usuarios (nombre, email, password_hash, estado, fecha_solicitud, fecha_aprobacion)
+    VALUES (?, ?, ?, 'activo', ?, ?)
+  `).run('Andrés Pardo', 'andres@majocolombia.com', hash,
+    new Date().toISOString(), new Date().toISOString());
+}
+
 // ===== TENDENCIAS QUERIES =====
 const getTendencias       = db.prepare('SELECT * FROM tendencias ORDER BY fuerza DESC');
 const getTendenciasCat    = db.prepare('SELECT * FROM tendencias WHERE categoria = ? ORDER BY fuerza DESC');
